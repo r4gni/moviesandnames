@@ -3,31 +3,40 @@ library(datasets)
 library(reshape2)
 library(ggplot2)
 
-# We tweak the "am" field to have nicer factor labels. Since this doesn't
-# rely on any user inputs we can do this once at startup and then use the
-# value throughout the lifetime of the application
-RoseBella <- data.frame(time = seq(1880, 2011), Bella$Pure.Number, Rosemary$Pure.Number)
-Molten <-melt(RoseBella, id.vars="time")
+RoseBella <- data.frame(time = seq(1880, 2011), Bella$Bella, Rosemary$Rosemary)
+Molten<-melt(RoseBella, id.vars="time")
+write.csv(RoseBella, file="RoseBella.csv", row.names=TRUE)
 
-# Define server logic required to plot various variables against mpg
 shinyServer(function(input, output) {
   
-  # Compute the forumla text in a reactive expression since it is 
-  # shared by the output$caption and output$mpgPlot expressions
   formulaText <- reactive({
-    paste("Movie and ", input$variable)
+    if(input$movie){ paste("Movie releases and the first names", input$variable[1], " & " ,input$variable[2])
+    } else if(input$variable[1]){paste(input$variable[1])
+    }else if(input$variable[2]){paste(input$variable[2])
+    }else{paste(input$variable[1], " & ", input$variable[2])
+    } 
   })
-  
-  # Return the formula text for printing as a caption
+   
+    
   output$caption <- renderText({
     formulaText()
   })
-  
-  # Generate a plot of the requested variable against mpg and only 
-  # include outliers if requested
-  output$mpgPlot <- renderPlot({
-    ggplot(Molten, aes(x=time, y=value, colour = variable)) +geom_line()
+
+  output$Rosemary <- renderPlot({
+    p<-ggplot(RoseBella, aes(x=time)) + geom_line(aes(y = RoseBella$Rosemary.Rosemary, colour = "Rosemary")) 
+    if(input$movie){p <- p + geom_vline(xintercept=1918,col="green") + geom_vline(xintercept=1915,col="green") }
+    print(p) 
   })
- 
   
+  output$Bella <- renderPlot({
+    p<-ggplot(RoseBella, aes(x=time)) + geom_line(aes(y = RoseBella$Bella.Bella, col= "Bella"))
+    if(input$movie){p <- p + geom_vline(xintercept=2008, col="blue") + geom_vline(xintercept=2005, col="blue") }
+    print(p) 
+  })
+  
+  output$Rosemaryandbella <- renderPlot({
+    p<-ggplot(RoseBella, aes(x=time)) + geom_line(aes(y = RoseBella$Rosemary.Rosemary, colour = "Rosemary")) + geom_line(aes(y = RoseBella$Bella.Bella, colour = "Bella"))
+    if(input$movie){p <- p + geom_vline(xintercept=2008, col="blue") + geom_vline(xintercept=2005, col="blue") + geom_vline(xintercept=1918,col="green") + geom_vline(xintercept=1915,col="green")}
+    print(p) 
+    })
 })
